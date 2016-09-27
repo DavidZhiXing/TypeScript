@@ -88,8 +88,8 @@ namespace ts.JsTyping {
 
         // Add the cached typing locations for inferred typings that are already installed
         for (const name in packageNameToTypingLocation) {
-            if (name in inferredTypings && !inferredTypings[name]) {
-                inferredTypings[name] = packageNameToTypingLocation[name];
+            if (name in inferredTypings && !_g(inferredTypings, name)) {
+                _copySingle(inferredTypings, packageNameToTypingLocation, name);
             }
         }
 
@@ -100,14 +100,15 @@ namespace ts.JsTyping {
 
         const newTypingNames: string[] = [];
         const cachedTypingPaths: string[] = [];
-        for (const typing in inferredTypings) {
-            if (inferredTypings[typing] !== undefined) {
-                cachedTypingPaths.push(inferredTypings[typing]);
+
+        _each(inferredTypings, (typing, inferredTyping) => {
+            if (inferredTyping !== undefined) {
+                cachedTypingPaths.push(inferredTyping);
             }
             else {
                 newTypingNames.push(typing);
             }
-        }
+        });
         return { cachedTypingPaths, newTypingNames, filesToWatch };
 
         /**
@@ -119,8 +120,8 @@ namespace ts.JsTyping {
             }
 
             for (const typing of typingNames) {
-                if (!(typing in inferredTypings)) {
-                    inferredTypings[typing] = undefined;
+                if (!_has(inferredTypings, typing)) {
+                    _s(inferredTypings, typing, undefined);
                 }
             }
         }
@@ -134,16 +135,16 @@ namespace ts.JsTyping {
                 const jsonConfig: PackageJson = result.config;
                 filesToWatch.push(jsonPath);
                 if (jsonConfig.dependencies) {
-                    mergeTypings(getOwnKeys(jsonConfig.dependencies));
+                    mergeTypings(_ownKeys(jsonConfig.dependencies));
                 }
                 if (jsonConfig.devDependencies) {
-                    mergeTypings(getOwnKeys(jsonConfig.devDependencies));
+                    mergeTypings(_ownKeys(jsonConfig.devDependencies));
                 }
                 if (jsonConfig.optionalDependencies) {
-                    mergeTypings(getOwnKeys(jsonConfig.optionalDependencies));
+                    mergeTypings(_ownKeys(jsonConfig.optionalDependencies));
                 }
                 if (jsonConfig.peerDependencies) {
-                    mergeTypings(getOwnKeys(jsonConfig.peerDependencies));
+                    mergeTypings(_ownKeys(jsonConfig.peerDependencies));
                 }
             }
         }
@@ -209,7 +210,7 @@ namespace ts.JsTyping {
                 }
                 if (packageJson.typings) {
                     const absolutePath = getNormalizedAbsolutePath(packageJson.typings, getDirectoryPath(normalizedFileName));
-                    inferredTypings[packageJson.name] = absolutePath;
+                    _s(inferredTypings, packageJson.name, absolutePath);
                 }
                 else {
                     typingNames.push(packageJson.name);

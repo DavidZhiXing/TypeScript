@@ -64,12 +64,12 @@ namespace ts.Completions {
             const nameTable = getNameTable(sourceFile);
             for (const name in nameTable) {
                 // Skip identifiers produced only from the current location
-                if (nameTable[name] === position) {
+                if (_g(nameTable, name) === position) {
                     continue;
                 }
 
-                if (!uniqueNames[name]) {
-                    uniqueNames[name] = name;
+                if (!_g(uniqueNames, name)) {
+                    _s(uniqueNames, name, name);
                     const displayName = getCompletionEntryDisplayName(unescapeIdentifier(name), compilerOptions.target, /*performCharacterChecks*/ true);
                     if (displayName) {
                         const entry = {
@@ -120,9 +120,9 @@ namespace ts.Completions {
                     const entry = createCompletionEntry(symbol, location, performCharacterChecks);
                     if (entry) {
                         const id = escapeIdentifier(entry.name);
-                        if (!uniqueNames[id]) {
+                        if (!_g(uniqueNames, id)) {
                             entries.push(entry);
-                            uniqueNames[id] = id;
+                            _s(uniqueNames, id, id);
                         }
                     }
                 }
@@ -349,8 +349,8 @@ namespace ts.Completions {
 
                         const foundFileName = includeExtensions ? getBaseFileName(filePath) : removeFileExtension(getBaseFileName(filePath));
 
-                        if (!foundFiles[foundFileName]) {
-                            foundFiles[foundFileName] = true;
+                        if (!_g(foundFiles, foundFileName)) {
+                            _s(foundFiles, foundFileName, true);
                         }
                     }
 
@@ -1522,14 +1522,14 @@ namespace ts.Completions {
                 }
 
                 const name = element.propertyName || element.name;
-                existingImportsOrExports[name.text] = true;
+                _s(existingImportsOrExports, name.text, true);
             }
 
             if (!someProperties(existingImportsOrExports)) {
                 return filter(exportsOfModule, e => e.name !== "default");
             }
 
-            return filter(exportsOfModule, e => e.name !== "default" && !existingImportsOrExports[e.name]);
+            return filter(exportsOfModule, e => e.name !== "default" && !_g(existingImportsOrExports, e.name));
         }
 
         /**
@@ -1573,10 +1573,10 @@ namespace ts.Completions {
                     existingName = (<Identifier>m.name).text;
                 }
 
-                existingMemberNames[existingName] = true;
+                _s(existingMemberNames, existingName, true);
             }
 
-            return filter(contextualMemberSymbols, m => !existingMemberNames[m.name]);
+            return filter(contextualMemberSymbols, m => !_g(existingMemberNames, m.name));
         }
 
         /**
@@ -1594,11 +1594,11 @@ namespace ts.Completions {
                 }
 
                 if (attr.kind === SyntaxKind.JsxAttribute) {
-                    seenNames[(<JsxAttribute>attr).name.text] = true;
+                    _s(seenNames, (<JsxAttribute>attr).name.text, true);
                 }
             }
 
-            return filter(symbols, a => !seenNames[a.name]);
+            return filter(symbols, a => !_g(seenNames, a.name));
         }
     }
 

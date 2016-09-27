@@ -507,7 +507,7 @@ namespace ts {
             }
 
             function getDeclarations(name: string) {
-                return result[name] || (result[name] = []);
+                return _getOrUpdate(result, name, () => []);
             }
 
             function getDeclarationName(declaration: Declaration) {
@@ -1839,7 +1839,7 @@ namespace ts {
         function walk(node: Node) {
             switch (node.kind) {
                 case SyntaxKind.Identifier:
-                    nameTable[(<Identifier>node).text] = nameTable[(<Identifier>node).text] === undefined ? node.pos : -1;
+                    _s(nameTable, (<Identifier>node).text, _g(nameTable, (<Identifier>node).text) === undefined ? node.pos : -1);
                     break;
                 case SyntaxKind.StringLiteral:
                 case SyntaxKind.NumericLiteral:
@@ -1852,7 +1852,7 @@ namespace ts {
                         isArgumentOfElementAccessExpression(node) ||
                         isLiteralComputedPropertyDeclarationName(node)) {
 
-                        nameTable[(<LiteralExpression>node).text] = nameTable[(<LiteralExpression>node).text] === undefined ? node.pos : -1;
+                        _s(nameTable, (<LiteralExpression>node).text, _g(nameTable, (<LiteralExpression>node).text) === undefined ? node.pos : -1);
                     }
                     break;
                 default:

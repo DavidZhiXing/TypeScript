@@ -14,7 +14,7 @@ namespace ts {
 namespace ts {
 
     const createObject = Object.create;
-    const hasOwnProperty = Object.prototype.hasOwnProperty;
+    export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
     export function createMap<T>(template?: MapLike<T>): Map<T> {
         const map: Map<T> = createObject(null); // tslint:disable-line:no-null-keyword
@@ -33,6 +33,163 @@ namespace ts {
 
         return map;
     }
+
+    //PRIMITIVE OPERATIONS: Need a different strategy for real map vs {}
+
+    //neater
+    export function _delete(map: Map<any>, key: string): void {
+        delete (map as MapLike<any>)[key];
+    }
+    export function _deleteWakka(map: Map<any>, key: any): void {
+        _delete(map, key.toString());
+    }
+    //TODO: many of these checks could be replaced by 'get' and checking the result for undefined.
+    export function _has(map: Map<any>, key: string): boolean {
+        return key in map;
+    }
+    export function _hasWakka(map: Map<any>, key: any): boolean {
+        return _has(map, key.toString())
+    }
+    export function _g<T>(map: Map<T>, key: string): T {
+        return (map as any as MapLike<T>)[key];
+    }
+    export function _getWakka<T>(map: Map<T>, key: any): T {
+        return _g(map, key.toString())
+    }
+    export function _s<T>(map: Map<T>, key: string, value: T): T {
+        return (map as any as MapLike<T>)[key] = value;
+    }
+    export function _setWakka<T>(map: Map<T>, key: any, value: T): T {
+        return _s(map, key.toString(), value);
+    }
+    export function _getOrUpdate<T>(map: Map<T>, key: string, getValue: (key: string) => T): T {
+        return _has(map, key) ? _g(map, key) : _s(map, key, getValue(key))
+    }
+    /*
+    export function getOwnKeys<T>(map: MapLike<T>): string[] {
+        const keys: string[] = [];
+        for (const key in map) if (hasOwnProperty.call(map, key)) {
+            keys.push(key);
+        }
+        return keys;
+    }*/
+    export function _ownKeys<T>(map: Map<T>): string[] {
+        const keys: string[] = [];
+        for (const key in map)
+            keys.push(key);
+        return keys;
+    }
+    export function _each<T>(map: Map<T>, f: (key: string, value: T) => void) {
+        for (const key in map) {
+            f(key, _g(map, key));
+        }
+    }
+
+    export function _copySingle<T>(dst: Map<T>, src: Map<T>, key: string) {
+        _s(dst, key, _g(src, key))
+    }
+    export function _toMapLike<T>(map: Map<T>): MapLike<T> {
+        return map as any as MapLike<T>
+    }
+
+    //TODO: this needs to be different depending on the type of map
+    /**
+     * Enumerates the properties of a Map<T>, invoking a callback and returning the first truthy result.
+     *
+     * @param map A map for which properties should be enumerated.
+     * @param callback A callback to invoke for each property.
+     */
+    export function forEachProperty<T, U>(map: Map<T>, callback: (value: T, key: string) => U): U {
+        let result: U;
+        for (const key in map) {
+            if (result = callback(map[key], key)) break;
+        }
+        return result;
+    }
+
+    /**
+     * Returns true if a Map<T> has some matching property.
+     *
+     * @param map A map whose properties should be tested.
+     * @param predicate An optional callback used to test each property.
+     */
+    export function someProperties<T>(map: Map<T>, predicate?: (value: T, key: string) => boolean) {
+        for (const key in map) {
+            if (!predicate || predicate(map[key], key)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reduce the properties of a map.
+     *
+     * NOTE: This is intended for use with Map<T> objects. For MapLike<T> objects, use
+     *       reduceOwnProperties instead as it offers better runtime safety.
+     *
+     * @param map The map to reduce
+     * @param callback An aggregation function that is called for each entry in the map
+     * @param initial The initial value for the reduction.
+     */
+    export function reduceProperties<T, U>(map: Map<T>, callback: (aggregate: U, value: T, key: string) => U, initial: U): U {
+        let result = initial;
+        for (const key in map) {
+            result = callback(result, map[key], String(key));
+        }
+        return result;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    export function cloneMap<T>(map: Map<T>) {
+        const clone = createMap<T>();
+        copyMapPropertiesFromTo(map, clone);
+        return clone;
+    }
+
+    /**
+     * Performs a shallow copy of the properties from a source Map<T> to a target Map<T>
+     *
+     * @param source A map from which properties should be copied.
+     * @param target A map to which properties should be copied.
+     */
+    export function copyMapPropertiesFromTo<T>(source: Map<T>, target: Map<T>): void {
+        for (const key in source) {
+            _s(target, key, _g(source, key))
+        }
+    }
+
+
+
+    export function isEmpty<T>(map: Map<T>): boolean {
+        for (const id in map) {
+            //if (_has(map, id)) {
+                return false;
+            //}
+        }
+        return true;
+    }
+
+
+
+
+
+
+
+
+}
+
+//MAPLIKE CRAP
+/* @internal */
+namespace ts {
 
     /**
      * Indicates whether a map-like contains an own property with the specified key.
@@ -76,52 +233,6 @@ namespace ts {
         return keys;
     }
 
-    /**
-     * Enumerates the properties of a Map<T>, invoking a callback and returning the first truthy result.
-     *
-     * @param map A map for which properties should be enumerated.
-     * @param callback A callback to invoke for each property.
-     */
-    export function forEachProperty<T, U>(map: Map<T>, callback: (value: T, key: string) => U): U {
-        let result: U;
-        for (const key in map) {
-            if (result = callback(map[key], key)) break;
-        }
-        return result;
-    }
-
-    /**
-     * Returns true if a Map<T> has some matching property.
-     *
-     * @param map A map whose properties should be tested.
-     * @param predicate An optional callback used to test each property.
-     */
-    export function someProperties<T>(map: Map<T>, predicate?: (value: T, key: string) => boolean) {
-        for (const key in map) {
-            if (!predicate || predicate(map[key], key)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Performs a shallow copy of the properties from a source Map<T> to a target MapLike<T>
-     *
-     * @param source A map from which properties should be copied.
-     * @param target A map to which properties should be copied.
-     */
-    export function copyProperties<T>(source: Map<T>, target: MapLike<T>): void {
-        for (const key in source) {
-            target[key] = source[key];
-        }
-    }
-
-    //neater
-    export function copyMapPropertiesFromTo<T>(source: Map<T>, target: Map<T>): void {
-        for (const key in source) {
-            _s(target, key, _g(source, key))
-        }
-    }
-
     export function assign<T1 extends MapLike<{}>, T2, T3>(t: T1, arg1: T2, arg2: T3): T1 & T2 & T3;
     export function assign<T1 extends MapLike<{}>, T2>(t: T1, arg1: T2): T1 & T2;
     export function assign<T1 extends MapLike<{}>>(t: T1, ...args: any[]): any;
@@ -132,24 +243,6 @@ namespace ts {
             }
         }
         return t;
-    }
-
-    /**
-     * Reduce the properties of a map.
-     *
-     * NOTE: This is intended for use with Map<T> objects. For MapLike<T> objects, use
-     *       reduceOwnProperties instead as it offers better runtime safety.
-     *
-     * @param map The map to reduce
-     * @param callback An aggregation function that is called for each entry in the map
-     * @param initial The initial value for the reduction.
-     */
-    export function reduceProperties<T, U>(map: Map<T>, callback: (aggregate: U, value: T, key: string) => U, initial: U): U {
-        let result = initial;
-        for (const key in map) {
-            result = callback(result, map[key], String(key));
-        }
-        return result;
     }
 
     /**
@@ -189,6 +282,28 @@ namespace ts {
         return true;
     }
 
+    export function extend<T1, T2>(first: T1 , second: T2): T1 & T2 {
+        const result: T1 & T2 = <any>{};
+        for (const id in second) if (hasOwnProperty.call(second, id)) {
+            (result as any)[id] = (second as any)[id];
+        }
+        for (const id in first) if (hasOwnProperty.call(first, id)) {
+            (result as any)[id] = (first as any)[id];
+        }
+        return result;
+    }
+}
+
+
+
+
+
+
+
+
+//Map extensions: don't depend on internal details
+/* @internal */
+namespace ts {
     /**
      * Creates a map from the elements of an array.
      *
@@ -204,24 +319,9 @@ namespace ts {
     export function arrayToMap<T, U>(array: T[], makeKey: (value: T) => string, makeValue?: (value: T) => U): Map<T | U> {
         const result = createMap<T | U>();
         for (const value of array) {
-            result[makeKey(value)] = makeValue ? makeValue(value) : value;
+            _s(result, makeKey(value), makeValue ? makeValue(value) : value);
         }
         return result;
-    }
-
-    export function isEmpty<T>(map: Map<T>) {
-        for (const id in map) {
-            if (hasProperty(map, id)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    export function cloneMap<T>(map: Map<T>) {
-        const clone = createMap<T>();
-        copyProperties(map, clone);
-        return clone;
     }
 
     export function clone<T>(object: T): T {
@@ -239,13 +339,13 @@ namespace ts {
      * Creates the array if it does not already exist.
      */
     export function multiMapAdd<V>(map: Map<V[]>, key: string, value: V): V[] {
-        const values = map[key];
+        const values = _g(map, key);
         if (values) {
             values.push(value);
             return values;
         }
         else {
-            return map[key] = [value];
+            return _s(map, key, [value]);
         }
     }
 
@@ -255,61 +355,15 @@ namespace ts {
      * Does nothing if `key` is not in `map`, or `value` is not in `map[key]`.
      */
     export function multiMapRemove<V>(map: Map<V[]>, key: string, value: V): void {
-        const values = map[key];
+        const values = _g(map, key);
         if (values) {
             unorderedRemoveItem(values, value);
             if (!values.length) {
-                delete map[key];
+                _delete(map, key);
             }
         }
     }
 
-    //neater
-    export function _delete(map: Map<any>, key: string): void {
-        delete (map as MapLike<any>)[key];
-    }
-    export function _deleteWakka(map: Map<any>, key: any): void {
-        _delete(map, key.toString());
-    }
-    //TODO: many of these checks could be replaced by 'get' and checking the result for undefined.
-    export function _has(map: Map<any>, key: string): boolean {
-        return key in map;
-    }
-    export function _hasWakka(map: Map<any>, key: any): boolean {
-        return _has(map, key.toString())
-    }
-    export function _g<T>(map: Map<T>, key: string): T {
-        return (map as any as MapLike<T>)[key];
-    }
-    export function _getWakka<T>(map: Map<T>, key: any): T {
-        return _g(map, key.toString())
-    }
-    export function _s<T>(map: Map<T>, key: string, value: T): T {
-        return (map as any as MapLike<T>)[key] = value;
-    }
-    export function _setWakka<T>(map: Map<T>, key: any, value: T): T {
-        return _s(map, key.toString(), value);
-    }
-    export function _getOrUpdate<T>(map: Map<T>, key: string, getValue: (key: string) => T): T {
-        return _has(map, key) ? _g(map, key) : _s(map, key, getValue(key))
-    }
-
-    export function _copySingle<T>(dst: Map<T>, src: Map<T>, key: string) {
-        _s(dst, key, _g(src, key))
-    }
-    export function _toMapLike<T>(map: Map<T>): MapLike<T> {
-        return map as any as MapLike<T>
-    }
 
 
-    export function extend<T1, T2>(first: T1 , second: T2): T1 & T2 {
-        const result: T1 & T2 = <any>{};
-        for (const id in second) if (hasOwnProperty.call(second, id)) {
-            (result as any)[id] = (second as any)[id];
-        }
-        for (const id in first) if (hasOwnProperty.call(first, id)) {
-            (result as any)[id] = (first as any)[id];
-        }
-        return result;
-    }
 }

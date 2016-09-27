@@ -32,9 +32,7 @@ namespace ts {
         };
 
         function forEachValueInMap(f: (key: Path, value: T) => void) {
-            for (const key in files) { //TODO: foreach
-                f(<Path>key, files[key]);
-            }
+            _each(files, f);
         }
 
         // path should already be well-formed so it does not need to be normalized

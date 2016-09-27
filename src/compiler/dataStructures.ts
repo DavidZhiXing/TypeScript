@@ -85,11 +85,59 @@ namespace ts {
         }
     }
 
+    export function _find<T, U>(map: Map<T>, f: (key: string, value: T) => U | undefined): U | undefined {
+        for (const key in map) {
+            const result = f(key, map[key]);
+            if (result !== undefined)
+                return result;
+        }
+        return undefined;
+    }
+
+    export function _someKey<T>(map: Map<T>, f: (key: string) => void) {
+        for (const key in map) {
+            const isMatch = f(key);
+            if (isMatch) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    export function _eachKey<T>(map: Map<T>, f: (key: string) => void) {
+        for (const key in map) {
+            f(key);
+        }
+    }
+
+    //neater
+    export function _eachAndBreakIfReturningTrue<T>(map: Map<T>, f: (key: string, value: T) => boolean) {
+        for (const key in map) {
+            const shouldBreak = f(key, _g(map, key))
+            if (shouldBreak) {
+                break;
+            }
+        }
+    }
+
+    export function _eachValue<T>(map: Map<T>, f: (value: T) => void) {
+        for (const key in map) {
+            f(_g(map, key))
+        }
+    }
+
+    //kill
     export function _copySingle<T>(dst: Map<T>, src: Map<T>, key: string) {
         _s(dst, key, _g(src, key))
     }
     export function _toMapLike<T>(map: Map<T>): MapLike<T> {
         return map as any as MapLike<T>
+    }
+
+    export function _mapValuesMutate<T>(map: Map<T>, mapValue: (value: T) => T): void {
+        _each(map, (key, value) => {
+            _s(map, key, mapValue(value))
+        });
     }
 
     //TODO: this needs to be different depending on the type of map
@@ -99,6 +147,7 @@ namespace ts {
      * @param map A map for which properties should be enumerated.
      * @param callback A callback to invoke for each property.
      */
+    //TODO: kill, use _find
     export function forEachProperty<T, U>(map: Map<T>, callback: (value: T, key: string) => U): U {
         let result: U;
         for (const key in map) {

@@ -2182,8 +2182,7 @@ namespace ts {
                         extraVariableDeclarations = [];
                     }
                     // hoist collected variable declarations
-                    for (const name in currentState.hoistedLocalVariables) {
-                        const identifier = currentState.hoistedLocalVariables[name];
+                    for (const identifier of currentState.hoistedLocalVariables) {
                         extraVariableDeclarations.push(createVariableDeclaration(identifier));
                     }
                 }
@@ -2348,8 +2347,7 @@ namespace ts {
             if (!table) {
                 return;
             }
-            for (const labelText in table) {
-                const labelMarker = _g(table, labelText);
+            _each(table, (labelText, labelMarker) => {
                 const statements: Statement[] = [];
                 // if there are no outer converted loop or outer label in question is located inside outer converted loop
                 // then emit labeled break\continue
@@ -2363,7 +2361,7 @@ namespace ts {
                     statements.push(createReturn(loopResultName));
                 }
                 caseClauses.push(createCaseClause(createLiteral(labelMarker), statements));
-            }
+            });
         }
 
         function processLoopVariableDeclaration(decl: VariableDeclaration | BindingElement, loopParameters: ParameterDeclaration[], loopOutParameters: LoopOutParameter[]) {

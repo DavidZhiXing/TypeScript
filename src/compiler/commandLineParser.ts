@@ -720,12 +720,11 @@ namespace ts {
         //Changed this from MapLike to Map, because it's only used with Maps
         function getNameOfCompilerOptionValue(value: CompilerOptionsValue, customTypeMap: Map<string | number>): string | undefined {
             // There is a typeMap associated with this command-line option so use it to map value back to its name
-            for (const key in customTypeMap) {
-                if (_g(customTypeMap, key) === value) {
+            return _find(customTypeMap, (key, customValue) => {
+                if (customValue === value) {
                     return key;
                 }
-            }
-            return undefined;
+            });
         }
 
         function serializeCompilerOptions(options: CompilerOptions): Map<CompilerOptionsValue> {
@@ -1259,13 +1258,13 @@ namespace ts {
             }
 
             // Remove any subpaths under an existing recursively watched directory.
-            for (const key in wildcardDirectories) {
+            _eachKey(wildcardDirectories, key => {
                 for (const recursiveKey of recursiveKeys) {
                     if (key !== recursiveKey && containsPath(recursiveKey, key, path, !useCaseSensitiveFileNames)) {
                         _delete(wildcardDirectories, key);
                     }
                 }
-            }
+            });
         }
 
         return wildcardDirectories;

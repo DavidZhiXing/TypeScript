@@ -8,7 +8,7 @@ namespace ts {
 
     function createDefaultServerHost(fileMap: Map<File>): server.ServerHost {
         const existingDirectories = createMap<boolean>();
-        for (const name in fileMap) {
+        _eachKey(fileMap, name => {
             let dir = getDirectoryPath(name);
             let previous: string;
             do {
@@ -16,7 +16,7 @@ namespace ts {
                 previous = dir;
                 dir = getDirectoryPath(dir);
             } while (dir !== previous);
-        }
+        });
         return {
             args: <string[]>[],
             newLine: "\r\n",

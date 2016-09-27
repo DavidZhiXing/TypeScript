@@ -87,11 +87,11 @@ namespace ts.JsTyping {
         getTypingNamesFromSourceFileNames(fileNames);
 
         // Add the cached typing locations for inferred typings that are already installed
-        for (const name in packageNameToTypingLocation) {
+        _each(packageNameToTypingLocation, (name, typingLocation) => {
             if (name in inferredTypings && !_g(inferredTypings, name)) {
-                _copySingle(inferredTypings, packageNameToTypingLocation, name);
+                _s(inferredTypings, name, typingLocation);
             }
-        }
+        });
 
         // Remove typings that the user has added to the exclude list
         for (const excludeTypingName of exclude) {

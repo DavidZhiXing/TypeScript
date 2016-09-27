@@ -732,9 +732,9 @@ namespace ts {
                 const options: string[] = [];
                 const element = (<CommandLineOptionOfListType>option).element;
                 const typeMap = <Map<number | string>>element.type;
-                for (const key in typeMap) {
+                _eachKey(typeMap, key => {
                     options.push(`'${key}'`);
-                }
+                });
                 _s(optionsDescriptionMap, description, options);
             }
             else {

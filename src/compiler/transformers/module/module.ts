@@ -671,7 +671,7 @@ namespace ts {
                     if (!_getWakka(bindingNameExportSpecifiersForFileMap, sourceFileId)) {
                         _setWakka(bindingNameExportSpecifiersForFileMap, sourceFileId, createMap<ExportSpecifier[]>());
                     }
-                    _copySingle(_getWakka(bindingNameExportSpecifiersForFileMap, sourceFileId), exportSpecifiers, name.text);
+                    _s(_getWakka(bindingNameExportSpecifiersForFileMap, sourceFileId), name.text, _g(exportSpecifiers, name.text));
                     addExportMemberAssignments(resultStatements, name);
                 }
             }
@@ -823,7 +823,7 @@ namespace ts {
 
         function onEmitNode(node: Node, emit: (node: Node) => void): void {
             if (node.kind === SyntaxKind.SourceFile) {
-                bindingNameExportSpecifiersMap = bindingNameExportSpecifiersForFileMap[getOriginalNodeId(node)];
+                bindingNameExportSpecifiersMap = _getWakka(bindingNameExportSpecifiersForFileMap, getOriginalNodeId(node));
                 previousOnEmitNode(node, emit);
                 bindingNameExportSpecifiersMap = undefined;
             }

@@ -456,18 +456,18 @@ namespace ts {
         }
 
         function mergeSymbolTable(target: SymbolTable, source: SymbolTable) {
-            for (const id in source) {
+            _each(source, (id, sourceSymbol) => {
                 let targetSymbol = _g(target, id);
                 if (!targetSymbol) {
-                    _copySingle(target, source, id);
+                    _s(target, id, sourceSymbol);
                 }
                 else {
                     if (!(targetSymbol.flags & SymbolFlags.Merged)) {
                         _s(target, id, targetSymbol = cloneSymbol(targetSymbol));
                     }
-                    mergeSymbol(targetSymbol, _g(source, id));
+                    mergeSymbol(targetSymbol, sourceSymbol);
                 }
-            }
+            });
         }
 
         function mergeModuleAugmentation(moduleName: LiteralExpression): void {
@@ -508,16 +508,16 @@ namespace ts {
         }
 
         function addToSymbolTable(target: SymbolTable, source: SymbolTable, message: DiagnosticMessage) {
-            for (const id in source) {
+            _each(source, (id, sourceSymbol) => {
                 const symbol = _g(target, id)
                 if (symbol) {
                     // Error on redeclarations
                     forEach(symbol.declarations, addDeclarationDiagnostic(id, message));
                 }
                 else {
-                    _copySingle(target, source, id);
+                    _s(target, id, sourceSymbol);
                 }
-            }
+            });
 
             function addDeclarationDiagnostic(id: string, message: DiagnosticMessage) {
                 return (declaration: Declaration) => diagnostics.add(createDiagnosticForNode(declaration, message, id));
@@ -1453,17 +1453,17 @@ namespace ts {
          * Not passing `lookupTable` and `exportNode` disables this collection, and just extends the tables
          */
         function extendExportSymbols(target: SymbolTable, source: SymbolTable, lookupTable?: Map<ExportCollisionTracker>, exportNode?: ExportDeclaration) {
-            for (const id in source) {
-                const foo = _g(target, id)//name
-                if (id !== "default" && !foo) {
-                    _copySingle(target, source, id);
+            _each(source, (id, sourceSymbol) => {
+                const targetSymbol = _g(target, id)
+                if (id !== "default" && !targetSymbol) {
+                    _s(target, id, sourceSymbol);
                     if (lookupTable && exportNode) {
                         _s(lookupTable, id, {
                             specifierText: getTextOfNode(exportNode.moduleSpecifier)
                         } as ExportCollisionTracker);
                     }
                 }
-                else if (lookupTable && exportNode && id !== "default" && foo && resolveSymbol(foo) !== resolveSymbol(_g(source, id))) {
+                else if (lookupTable && exportNode && id !== "default" && targetSymbol && resolveSymbol(targetSymbol) !== resolveSymbol(sourceSymbol)) {
                     const bar = _g(lookupTable, id) //name
                     if (!bar.exportsWithDuplicate) {
                         bar.exportsWithDuplicate = [exportNode];
@@ -1472,7 +1472,7 @@ namespace ts {
                         bar.exportsWithDuplicate.push(exportNode);
                     }
                 }
-            }
+            });
         }
 
         function getExportsForModule(moduleSymbol: Symbol): SymbolTable {
@@ -1502,11 +1502,10 @@ namespace ts {
                             node as ExportDeclaration
                         );
                     }
-                    for (const id in lookupTable) {
-                        const { exportsWithDuplicate } = _g(lookupTable, id);
+                    _each(lookupTable, (id, { exportsWithDuplicate }) => {
                         // It's not an error if the file with multiple `export *`s with duplicate names exports a member with that name itself
                         if (id === "export=" || !(exportsWithDuplicate && exportsWithDuplicate.length) || _g(symbols, id)) {
-                            continue;
+                            return;
                         }
                         for (const node of exportsWithDuplicate) {
                             diagnostics.add(createDiagnosticForNode(
@@ -1516,7 +1515,7 @@ namespace ts {
                                 id
                             ));
                         }
-                    }
+                    });
                     extendExportSymbols(symbols, nestedSymbols);
                 }
                 return symbols;
@@ -1610,15 +1609,14 @@ namespace ts {
 
         function getNamedMembers(members: SymbolTable): Symbol[] {
             let result: Symbol[];
-            for (const id in members) {
+            _each(members, (id, symbol) => {
                 if (!isReservedMemberName(id)) {
                     if (!result) result = [];
-                    const symbol = _g(members, id);
                     if (symbolIsValue(symbol)) {
                         result.push(symbol);
                     }
                 }
-            }
+            });
             return result || emptyArray;
         }
 
@@ -4616,11 +4614,11 @@ namespace ts {
 
         function symbolsToArray(symbols: SymbolTable): Symbol[] {
             const result: Symbol[] = [];
-            for (const id in symbols) {
+            _each(symbols, (id, symbol) => {
                 if (!isReservedMemberName(id)) {
-                    result.push(_g(symbols, id));
+                    result.push(symbol);
                 }
-            }
+            });
             return result;
         }
 
@@ -15445,8 +15443,7 @@ namespace ts {
 
         function checkUnusedLocalsAndParameters(node: Node): void {
             if (node.parent.kind !== SyntaxKind.InterfaceDeclaration && noUnusedIdentifiers && !isInAmbientContext(node)) {
-                for (const key in node.locals) {
-                    const local = _g(node.locals, key);
+                _eachValue(node.locals, local => {
                     if (!local.isReferenced) {
                         if (local.valueDeclaration && local.valueDeclaration.kind === SyntaxKind.Parameter) {
                             const parameter = <ParameterDeclaration>local.valueDeclaration;
@@ -15461,7 +15458,7 @@ namespace ts {
                             forEach(local.declarations, d => error(d.name || d, Diagnostics._0_is_declared_but_never_used, local.name));
                         }
                     }
-                }
+                });
             }
         }
 
@@ -15515,8 +15512,7 @@ namespace ts {
 
         function checkUnusedModuleMembers(node: ModuleDeclaration | SourceFile): void {
             if (compilerOptions.noUnusedLocals && !isInAmbientContext(node)) {
-                for (const key in node.locals) {
-                    const local = _g(node.locals, key);
+                _eachValue(node.locals, local => {
                     if (!local.isReferenced && !local.exportSymbol) {
                         for (const declaration of local.declarations) {
                             if (!isAmbientModule(declaration)) {
@@ -15524,7 +15520,7 @@ namespace ts {
                             }
                         }
                     }
-                }
+                });
             }
         }
 
@@ -17695,12 +17691,7 @@ namespace ts {
         }
 
         function hasExportedMembers(moduleSymbol: Symbol) {
-            for (const id in moduleSymbol.exports) {
-                if (id !== "export=") {
-                    return true;
-                }
-            }
-            return false;
+            return _someKey(moduleSymbol.exports, id => id !== "export=");
         }
 
         function checkExternalModuleExports(node: SourceFile | ModuleDeclaration) {
@@ -17716,21 +17707,20 @@ namespace ts {
                 }
                 // Checks for export * conflicts
                 const exports = getExportsOfModule(moduleSymbol);
-                for (const id in exports) {
+                _each(exports, (id, { declarations, flags }) => {
                     if (id === "__export") {
-                        continue;
+                        return;
                     }
-                    const { declarations, flags } = _g(exports, id);
                     // ECMA262: 15.2.1.1 It is a Syntax Error if the ExportedNames of ModuleItemList contains any duplicate entries.
                     // (TS Exceptions: namespaces, function overloads, enums, and interfaces)
                     if (flags & (SymbolFlags.Namespace | SymbolFlags.Interface | SymbolFlags.Enum)) {
-                        continue;
+                        return;
                     }
                     const exportedDeclarationsCount = countWhere(declarations, isNotOverload);
                     if (flags & SymbolFlags.TypeAlias && exportedDeclarationsCount <= 2) {
                         // it is legal to merge type alias with other values
                         // so count should be either 1 (just type alias) or 2 (type alias + merged value)
-                        continue;
+                        return;
                     }
                     if (exportedDeclarationsCount > 1) {
                         for (const declaration of declarations) {
@@ -17739,7 +17729,7 @@ namespace ts {
                             }
                         }
                     }
-                }
+                });
                 links.exportsChecked = true;
             }
 
@@ -18100,10 +18090,9 @@ namespace ts {
 
             function copySymbols(source: SymbolTable, meaning: SymbolFlags): void {
                 if (meaning) {
-                    for (const id in source) {
-                        const symbol = _g(source, id);
+                    _each(source, (id, symbol) => {
                         copySymbol(symbol, meaning);
-                    }
+                    });
                 }
             }
         }
@@ -18969,14 +18958,13 @@ namespace ts {
             if (resolvedTypeReferenceDirectives) {
                 // populate reverse mapping: file path -> type reference directive that was resolved to this file
                 fileToDirective = createFileMap<string>();
-                for (const key in resolvedTypeReferenceDirectives) {
-                    const resolvedDirective = _g(resolvedTypeReferenceDirectives, key);
+                _each(resolvedTypeReferenceDirectives, (key, resolvedDirective) => {
                     if (!resolvedDirective) {
-                        continue;
+                        return;
                     }
                     const file = host.getSourceFile(resolvedDirective.resolvedFileName);
                     fileToDirective.set(file.path, key);
-                }
+                });
             }
             return {
                 getReferencedExportContainer,
@@ -19115,11 +19103,11 @@ namespace ts {
                 if (file.symbol && file.symbol.globalExports) {
                     // Merge in UMD exports with first-in-wins semantics (see #9771)
                     const source = file.symbol.globalExports;
-                    for (const id in source) {
-                        if (!(id in globals)) {
-                            _copySingle(globals, source, id);
+                    _each(source, (id, sourceSymbol) => {
+                        if (!_has(globals, id)) {
+                            _s(globals, id, sourceSymbol);
                         }
-                    }
+                    });
                 }
                 if ((compilerOptions.isolatedModules || isExternalModule(file)) && !file.isDeclarationFile) {
                     const fileRequestedExternalEmitHelpers = file.flags & NodeFlags.EmitHelperFlags;
@@ -20398,11 +20386,11 @@ namespace ts {
 
         function getAmbientModules(): Symbol[] {
             const result: Symbol[] = [];
-            for (const sym in globals) {
+            _each(globals, (sym, global) => {
                 if (ambientModuleSymbolRegex.test(sym)) {
-                    result.push(_g(globals, sym));
+                    result.push(global);
                 }
-            }
+            });
             return result;
         }
     }

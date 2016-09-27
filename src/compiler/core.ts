@@ -356,6 +356,7 @@ namespace ts {
         return result;
     }
 
+    //Is this used???
     export function mapObject<T, U>(object: MapLike<T>, f: (key: string, x: T) => [string, U]): MapLike<U> {
         let result: MapLike<U>;
         if (object) {

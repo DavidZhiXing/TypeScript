@@ -108,7 +108,7 @@ namespace ts.server {
             it("should not throw when commands are executed with invalid arguments", () => {
                 let i = 0;
                 for (const name in CommandNames) {
-                    if (!Object.prototype.hasOwnProperty.call(CommandNames, name)) {
+                    if (!Object.prototype.hasOwnProperty.call(CommandNames, name)) { //TODO: use hasProperty
                         continue;
                     }
                     const req: protocol.Request = {

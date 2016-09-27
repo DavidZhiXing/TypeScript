@@ -509,7 +509,7 @@ namespace ts {
 
         function addToSymbolTable(target: SymbolTable, source: SymbolTable, message: DiagnosticMessage) {
             _each(source, (id, sourceSymbol) => {
-                const symbol = _g(target, id)
+                const symbol = _g(target, id);
                 if (symbol) {
                     // Error on redeclarations
                     forEach(symbol.declarations, addDeclarationDiagnostic(id, message));
@@ -741,7 +741,7 @@ namespace ts {
                             //     2. We check === SymbolFlags.Alias in order to check that the symbol is *purely*
                             //        an alias. If we used &, we'd be throwing out symbols that have non alias aspects,
                             //        which is not the desired behavior.
-                            const moduleExport = _g(moduleExports, name)
+                            const moduleExport = _g(moduleExports, name);
                             if (moduleExport &&
                                 moduleExport.flags === SymbolFlags.Alias &&
                                 getDeclarationOfKind(moduleExport, SyntaxKind.ExportSpecifier)) {
@@ -1059,20 +1059,15 @@ namespace ts {
             const moduleSymbol = resolveExternalModuleName(node, (<ImportDeclaration>node.parent).moduleSpecifier);
 
             if (moduleSymbol) {
-                //const exportDefaultSymbol = isShorthandAmbientModuleSymbol(moduleSymbol) ?
-                //    moduleSymbol :
-                //    moduleSymbol.exports["export="] ?
-                //        getPropertyOfType(getTypeOfSymbol(moduleSymbol.exports["export="]), "default") :
-                //        resolveSymbol(moduleSymbol.exports["default"]);
-                let exportDefaultSymbol: Symbol
+                let exportDefaultSymbol: Symbol;
                 if (isShorthandAmbientModuleSymbol(moduleSymbol)) {
-                    exportDefaultSymbol = moduleSymbol
+                    exportDefaultSymbol = moduleSymbol;
                 }
                 else {
-                    const exportValue = _g(moduleSymbol.exports, "export=")
+                    const exportValue = _g(moduleSymbol.exports, "export=");
                     exportDefaultSymbol = exportValue
                         ? getPropertyOfType(getTypeOfSymbol(exportValue), "default")
-                        : resolveSymbol(_g(moduleSymbol.exports, "default"))
+                        : resolveSymbol(_g(moduleSymbol.exports, "default"));
                 }
 
                 if (!exportDefaultSymbol && !allowSyntheticDefaultImports) {
@@ -1454,7 +1449,7 @@ namespace ts {
          */
         function extendExportSymbols(target: SymbolTable, source: SymbolTable, lookupTable?: Map<ExportCollisionTracker>, exportNode?: ExportDeclaration) {
             _each(source, (id, sourceSymbol) => {
-                const targetSymbol = _g(target, id)
+                const targetSymbol = _g(target, id);
                 if (id !== "default" && !targetSymbol) {
                     _s(target, id, sourceSymbol);
                     if (lookupTable && exportNode) {
@@ -2460,7 +2455,7 @@ namespace ts {
                     }
                     writeIndexSignature(resolved.stringIndexInfo, SyntaxKind.StringKeyword);
                     writeIndexSignature(resolved.numberIndexInfo, SyntaxKind.NumberKeyword);
-                    for (const p of resolved.properties) {
+                    for (const p of sortInV8ObjectInsertionOrder(resolved.properties, p => p.name)) {
                         const t = getTypeOfSymbol(p);
                         if (p.flags & (SymbolFlags.Function | SymbolFlags.Method) && !getPropertiesOfObjectType(t).length) {
                             const signatures = getSignaturesOfType(t, SignatureKind.Call);
@@ -6952,14 +6947,26 @@ namespace ts {
                 return result;
             }
 
-            function eachPropertyRelatedTo(source: Type, target: Type, kind: IndexKind, reportErrors: boolean): Ternary {
+            //document the new parameter
+            function eachPropertyRelatedTo(source: Type, target: Type, kind: IndexKind, reportErrors: boolean,  redoingInV8ObjectInsertionOrder?: boolean): Ternary {
                 let result = Ternary.True;
-                for (const prop of getPropertiesOfObjectType(source)) {
+                let properties = getPropertiesOfObjectType(source);
+                if (redoingInV8ObjectInsertionOrder) {
+                    properties = sortInV8ObjectInsertionOrder(properties, prop => prop.name);
+                }
+                for (const prop of properties) {
                     if (kind === IndexKind.String || isNumericLiteralName(prop.name)) {
-                        const related = isRelatedTo(getTypeOfSymbol(prop), target, reportErrors);
+                        const related = isRelatedTo(getTypeOfSymbol(prop), target, reportErrors && redoingInV8ObjectInsertionOrder);
                         if (!related) {
                             if (reportErrors) {
-                                reportError(Diagnostics.Property_0_is_incompatible_with_index_signature, symbolToString(prop));
+                                // For consistency, if we report errors we make sure to report the first error in V8's object insertion order.
+                                if (!redoingInV8ObjectInsertionOrder) {
+                                    const related = eachPropertyRelatedTo(source,  target, kind, reportErrors, /*redoingInV8ObjectInsertionOrder*/ true);
+                                    Debug.assert(related === Ternary.False);
+                                }
+                                else {
+                                    reportError(Diagnostics.Property_0_is_incompatible_with_index_signature, symbolToString(prop));
+                                }
                             }
                             return Ternary.False;
                         }

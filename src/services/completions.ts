@@ -393,7 +393,7 @@ namespace ts.Completions {
 
                 if (paths) {
                     for (const path in paths) {
-                        if (paths.hasOwnProperty(path)) {
+                        if (paths.hasOwnProperty(path)) { //use hasProperty
                             if (path === "*") {
                                 if (paths[path]) {
                                     for (const pattern of paths[path]) {

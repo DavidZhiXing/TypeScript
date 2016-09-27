@@ -18,7 +18,7 @@ namespace ts.server {
     const lineCollectionCapacity = 4;
 
     function mergeFormatOptions(formatCodeOptions: FormatCodeOptions, formatOptions: protocol.FormatOptions): void {
-        const hasOwnProperty = Object.prototype.hasOwnProperty;
+        const hasOwnProperty = Object.prototype.hasOwnProperty; //no no no, use hasProperty
         Object.keys(formatOptions).forEach((key) => {
             const codeKey = key.charAt(0).toUpperCase() + key.substring(1);
             if (hasOwnProperty.call(formatCodeOptions, codeKey)) {

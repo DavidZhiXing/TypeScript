@@ -3552,7 +3552,7 @@ namespace ts {
                         // export { x, y }
                         for (const specifier of (<ExportDeclaration>node).exportClause.elements) {
                             const name = (specifier.propertyName || specifier.name).text;
-                            (_getOrUpdate(exportSpecifiers, name, () => [])).push(specifier);
+                            multiMapAdd(exportSpecifiers, name, specifier);
                         }
                     }
                     break;

@@ -508,7 +508,7 @@ namespace ts.FindAllReferences {
                     result.push(ctrKeyword);
                 }
 
-                forEachProperty(classSymbol.exports, member => {
+                _eachValue(classSymbol.exports, member => {
                     const decl = member.valueDeclaration;
                     if (decl && decl.kind === SyntaxKind.MethodDeclaration) {
                         const body = (<MethodDeclaration>decl).body;
@@ -1078,7 +1078,7 @@ namespace ts.FindAllReferences {
             // the function will add any found symbol of the property-name, then its sub-routine will call
             // getPropertySymbolsFromBaseTypes again to walk up any base types to prevent revisiting already
             // visited symbol, interface "C", the sub-routine will pass the current symbol as previousIterationSymbol.
-            if (symbol.name in previousIterationSymbolsCache) {
+            if (_has(previousIterationSymbolsCache, symbol.name)) {
                 return;
             }
 

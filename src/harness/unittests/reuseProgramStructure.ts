@@ -106,7 +106,7 @@ namespace ts {
 
         return {
             getSourceFile(fileName): SourceFile {
-                return files[fileName];
+                return _g(files, fileName);
             },
             getDefaultLibFileName(): string {
                 return "lib.d.ts";
@@ -129,9 +129,9 @@ namespace ts {
             getNewLine(): string {
                 return sys ? sys.newLine : newLine;
             },
-            fileExists: fileName => fileName in files,
+            fileExists: fileName => _has(files, fileName),
             readFile: fileName => {
-                return fileName in files ? files[fileName].text : undefined;
+                return _has(files, fileName) ? _g(files, fileName).text : undefined;
             }
         };
     }
@@ -183,7 +183,7 @@ namespace ts {
         }
         else {
             assert.isTrue(cache !== undefined, `expected ${caption} to be set`);
-            assert.isTrue(equalOwnProperties(expectedContent, cache, entryChecker), `contents of ${caption} did not match the expected contents.`);
+            assert.isTrue(_equalMaps(expectedContent, cache, entryChecker), `contents of ${caption} did not match the expected contents.`);
         }
     }
 

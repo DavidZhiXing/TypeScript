@@ -2105,7 +2105,7 @@ namespace ts {
             // module might have an exported variable called 'prototype'.  We can't allow that as
             // that would clash with the built-in 'prototype' for the class.
             const prototypeSymbol = createSymbol(SymbolFlags.Property | SymbolFlags.Prototype, "prototype");
-            const symbolExport = _g(symbol.exports, prototypeSymbol.name)
+            const symbolExport = _g(symbol.exports, prototypeSymbol.name);
             if (symbolExport) {
                 if (node.name) {
                     node.name.parent = node;

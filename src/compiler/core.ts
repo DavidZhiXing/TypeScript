@@ -45,7 +45,7 @@ namespace ts {
         }
 
         function contains(path: Path) {
-            return toKey(path) in files;
+            return _has(files, toKey(path));
         }
 
         function remove(path: Path) {

@@ -109,7 +109,7 @@ namespace FourSlash {
     });
 
     export function escapeXmlAttributeValue(s: string) {
-        return s.replace(/[&<>"'\/]/g, ch => entityMap[ch]);
+        return s.replace(/[&<>"'\/]/g, ch => ts._g(entityMap, ch));
     }
 
     // Name of testcase metadata including ts.CompilerOptions properties that will be used by globalOptions
@@ -241,7 +241,7 @@ namespace FourSlash {
             }
 
             function tryAdd(path: string) {
-                const inputFile = inputFiles[path];
+                const inputFile = ts._g(inputFiles, path);
                 if (inputFile && !Harness.isDefaultLibraryFile(path)) {
                     languageServiceAdapterHost.addScript(path, inputFile, /*isRootFile*/ true);
                     return true;
@@ -275,7 +275,7 @@ namespace FourSlash {
 
             ts.forEach(testData.files, file => {
                 // Create map between fileName and its content for easily looking up when resolveReference flag is specified
-                this.inputFiles[file.fileName] = file.content;
+                ts._s(this.inputFiles, file.fileName, file.content);
 
                 if (ts.getBaseFileName(file.fileName).toLowerCase() === "tsconfig.json") {
                     const configJson = ts.parseConfigFileTextToJson(file.fileName, file.content);
@@ -699,11 +699,11 @@ namespace FourSlash {
             const completions = this.getCompletionListAtCaret();
             const uniqueItems = ts.createMap<string>();
             for (const item of completions.entries) {
-                if (!(item.name in uniqueItems)) {
-                    uniqueItems[item.name] = item.kind;
+                if (!ts._has(uniqueItems, item.name)) {
+                    ts._s(uniqueItems, item.name, item.kind);
                 }
                 else {
-                    assert.equal(item.kind, uniqueItems[item.name], `Items should have the same kind, got ${item.kind} and ${uniqueItems[item.name]}`);
+                    assert.equal(item.kind, ts._g(uniqueItems, item.name), `Items should have the same kind, got ${item.kind} and ${ts._g(uniqueItems, item.name)}`);
                 }
             }
         }
@@ -888,7 +888,7 @@ namespace FourSlash {
         }
 
         public verifyRangesWithSameTextReferenceEachOther() {
-            ts.forEachProperty(this.rangesByText(), ranges => this.verifyRangesReferenceEachOther(ranges));
+            ts._eachValue(this.rangesByText(), ranges => this.verifyRangesReferenceEachOther(ranges));
         }
 
         public verifyDisplayPartsOfReferencedSymbol(expected: ts.SymbolDisplayPart[]) {
@@ -965,7 +965,8 @@ namespace FourSlash {
         }
 
         public verifyQuickInfos(namesAndTexts: { [name: string]: string | [string, string] }) {
-            ts.forEachProperty(ts.createMap(namesAndTexts), (text, name) => {
+            //TODO: don't bother creating a map
+            ts._each(ts.createMap(namesAndTexts), (name, text) => {
                 if (text instanceof Array) {
                     assert(text.length === 2);
                     const [expectedText, expectedDocumentation] = text;
@@ -2078,7 +2079,7 @@ namespace FourSlash {
                 "<": ts.CharacterCodes.lessThan
             });
 
-            const charCode = openBraceMap[openingBrace];
+            const charCode = ts._g(openBraceMap, openingBrace);
 
             if (!charCode) {
                 this.raiseError(`Invalid openingBrace '${openingBrace}' specified.`);

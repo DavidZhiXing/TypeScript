@@ -515,7 +515,7 @@ namespace ts {
     export function parseCustomTypeOption(opt: CommandLineOptionOfCustomType, value: string, errors: Diagnostic[]) {
         const key = trimString((value || "")).toLowerCase();
         const map = opt.type;
-        if (key in map) {
+        if (_has(map, key)) {
             return _g(map, key);
         }
         else {
@@ -569,11 +569,11 @@ namespace ts {
                     s = s.slice(s.charCodeAt(1) === CharacterCodes.minus ? 2 : 1).toLowerCase();
 
                     // Try to translate short option names to their full equivalents.
-                    if (s in shortOptionNames) {
+                    if (_has(shortOptionNames, s)) {
                         s = _g(shortOptionNames, s);
                     }
 
-                    if (s in optionNameMap) {
+                    if (_has(optionNameMap, s)) {
                         const opt = _g(optionNameMap, s);
 
                         if (opt.isTSConfigOnly) {
@@ -982,7 +982,7 @@ namespace ts {
         const optionNameMap = arrayToMap(optionDeclarations, opt => opt.name);
 
         for (const id in jsonOptions) {
-            if (id in optionNameMap) {
+            if (_has(optionNameMap, id)) {
                 const opt = _g(optionNameMap, id);
                 defaultOptions[opt.name] = convertJsonOption(opt, jsonOptions[id], basePath, errors);
             }
@@ -1019,7 +1019,7 @@ namespace ts {
 
     function convertJsonOptionOfCustomType(opt: CommandLineOptionOfCustomType, value: string, errors: Diagnostic[]) {
         const key = value.toLowerCase();
-        if (key in opt.type) {
+        if (_has(opt.type, key)) {
             return _g(opt.type, key);
         }
         else {
@@ -1182,7 +1182,7 @@ namespace ts {
                 removeWildcardFilesWithLowerPriorityExtension(file, wildcardFileMap, supportedExtensions, keyMapper);
 
                 const key = keyMapper(file);
-                if (!(key in literalFileMap) && !(key in wildcardFileMap)) {
+                if (!_has(literalFileMap, key) && !_has(wildcardFileMap, key)) {
                     _s(wildcardFileMap, key, file);
                 }
             }
@@ -1284,7 +1284,7 @@ namespace ts {
         for (let i = ExtensionPriority.Highest; i < adjustedExtensionPriority; i++) {
             const higherPriorityExtension = extensions[i];
             const higherPriorityPath = keyMapper(changeExtension(file, higherPriorityExtension));
-            if (higherPriorityPath in literalFiles || higherPriorityPath in wildcardFiles) {
+            if (_has(literalFiles, higherPriorityPath) || _has(wildcardFiles, higherPriorityPath)) {
                 return true;
             }
         }

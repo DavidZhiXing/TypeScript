@@ -12,7 +12,7 @@ namespace ts {
             let dir = getDirectoryPath(name);
             let previous: string;
             do {
-                existingDirectories[dir] = true;
+                _s(existingDirectories, dir, true);
                 previous = dir;
                 dir = getDirectoryPath(dir);
             } while (dir !== previous);
@@ -24,7 +24,7 @@ namespace ts {
             write: (s: string) => {
             },
             readFile: (path: string, encoding?: string): string => {
-                return path in fileMap ? fileMap[path].content : undefined;
+                return _has(fileMap, path) ? _g(fileMap, path).content : undefined;
             },
             writeFile: (path: string, data: string, writeByteOrderMark?: boolean) => {
                 throw new Error("NYI");
@@ -33,10 +33,10 @@ namespace ts {
                 throw new Error("NYI");
             },
             fileExists: (path: string): boolean => {
-                return path in fileMap;
+                return _has(fileMap, path);
             },
             directoryExists: (path: string): boolean => {
-                return existingDirectories[path] || false;
+                return _g(existingDirectories, path) || false;
             },
             createDirectory: (path: string) => {
             },
@@ -218,7 +218,7 @@ namespace ts {
             assert.isTrue(typeof diags[0].messageText === "string" && ((<string>diags[0].messageText).indexOf("Cannot find module") === 0), "should be 'cannot find module' message");
 
             // assert that import will success once file appear on disk
-            fileMap[imported.name] = imported;
+            _s(fileMap, imported.name, imported);
             fileExistsCalledForBar = false;
             rootScriptInfo.editContent(0, content.length, `import {y} from "bar"`);
 

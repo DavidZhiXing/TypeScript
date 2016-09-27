@@ -742,7 +742,7 @@ namespace ts {
                             //        an alias. If we used &, we'd be throwing out symbols that have non alias aspects,
                             //        which is not the desired behavior.
                             const moduleExport = _g(moduleExports, name)
-                            if (moduleExport&&
+                            if (moduleExport &&
                                 moduleExport.flags === SymbolFlags.Alias &&
                                 getDeclarationOfKind(moduleExport, SyntaxKind.ExportSpecifier)) {
                                 break;
@@ -1464,7 +1464,7 @@ namespace ts {
                     }
                 }
                 else if (lookupTable && exportNode && id !== "default" && targetSymbol && resolveSymbol(targetSymbol) !== resolveSymbol(sourceSymbol)) {
-                    const bar = _g(lookupTable, id) //name
+                    const bar = _g(lookupTable, id); //name
                     if (!bar.exportsWithDuplicate) {
                         bar.exportsWithDuplicate = [exportNode];
                     }
@@ -1694,7 +1694,7 @@ namespace ts {
                 }
 
                 // Check if symbol is any of the alias
-                return forEachProperty(symbols, symbolFromSymbolTable => {
+                return _findMapValue(symbols, symbolFromSymbolTable => {
                     if (symbolFromSymbolTable.flags & SymbolFlags.Alias
                         && symbolFromSymbolTable.name !== "export="
                         && !getDeclarationOfKind(symbolFromSymbolTable, SyntaxKind.ExportSpecifier)) {
@@ -6246,7 +6246,7 @@ namespace ts {
                 return true;
             }
             const id = source.id + "," + target.id;
-            const relation = _g(enumRelation, id)
+            const relation = _g(enumRelation, id);
             if (relation !== undefined) {
                 return relation;
             }
@@ -8529,7 +8529,7 @@ namespace ts {
                 if (!key) {
                     key = getFlowCacheKey(reference);
                 }
-                const cached = _g(cache, key)
+                const cached = _g(cache, key);
                 if (cached) {
                     return cached;
                 }
@@ -18564,7 +18564,7 @@ namespace ts {
                 // otherwise - check if at least one export is value
                 symbolLinks.exportsSomeValue = hasExportAssignment
                     ? !!(moduleSymbol.flags & SymbolFlags.Value)
-                    : forEachProperty(getExportsOfModule(moduleSymbol), isValue);
+                    : _someValue(getExportsOfModule(moduleSymbol), isValue);
             }
 
             return symbolLinks.exportsSomeValue;

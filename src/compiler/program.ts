@@ -895,7 +895,7 @@ namespace ts {
         }
 
         function directoryExists(directoryPath: string): boolean {
-            if (directoryPath in existingDirectories) {
+            if (_has(existingDirectories, directoryPath)) {
                 return true;
             }
             if (sys.directoryExists(directoryPath)) {
@@ -923,7 +923,7 @@ namespace ts {
             const hash = sys.createHash(data);
             const mtimeBefore = sys.getModifiedTime(fileName);
 
-            if (mtimeBefore && fileName in outputFingerprints) {
+            if (mtimeBefore && _has(outputFingerprints, fileName)) {
                 const fingerprint = _g(outputFingerprints, fileName);
 
                 // If output has not been changed, and the file has no external modification
@@ -1062,7 +1062,7 @@ namespace ts {
         const resolutions: T[] = [];
         const cache = createMap<T>();
         for (const name of names) {
-            const result = name in cache
+            const result = _has(cache, name)
                 ? _g(cache, name)
                 : _s(cache, name, loader(name, containingFile));
             resolutions.push(result);

@@ -2283,7 +2283,7 @@ namespace ts {
             forEach(nonFileDiagnostics, pushDiagnostic);
 
             _eachValue(fileDiagnostics, diagnostics =>
-                forEach(diagnostics, pushDiagnostic))
+                forEach(diagnostics, pushDiagnostic));
 
             return sortAndDeduplicateDiagnostics(allDiagnostics);
         }
